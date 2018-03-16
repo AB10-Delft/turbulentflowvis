@@ -1,10 +1,11 @@
-import scipy.io as sc
 import numpy as np
 import timeit
 
 ### This version uses predefined tools:
 
 
+
+# Central difference
 def central(mtx,i,j,k,comp, drct, step = 2.):
     """ matrix, position, component-'u','v','w', direction-'x','y','z'"""
     ## decide which component to iterate
@@ -25,7 +26,7 @@ def central(mtx,i,j,k,comp, drct, step = 2.):
         prim = (mtx[i,j,k+1][vel]-mtx[i,j,k-1][vel])/step
         return prim
     
-
+# Forward difference
 def forward(mtx,i,j,k,comp, drct, step = 1.):
     """ matrix, position, component-'u','v','w', direction-'x','y','z'"""
     ## decide which component to iterate
@@ -47,7 +48,7 @@ def forward(mtx,i,j,k,comp, drct, step = 1.):
         return prim
 
     
-    
+# Backwards difference    
 def backward(mtx,i,j,k,comp, drct, step = 1.):
     """ matrix, position, component-'u','v','w', direction-'x','y','z'"""
     ## decide which component to iterate
