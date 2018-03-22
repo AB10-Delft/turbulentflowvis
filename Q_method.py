@@ -3,7 +3,7 @@ import scipy.io as sc
 from jacobian_file import jacobian_point
 import timeit
 from enthought.mayavi import mlab
-
+from enthought.tvtk.api import tvtk, write_data
 
 
 ####  read the matlabfile
@@ -45,8 +45,7 @@ start = timeit.default_timer()
 for i in r:
     for j in r:
         for k in r:
-            if Q(jacobian_point(C,i,j,k))>0:
-                 flow[i,j,k] = 1 # Q>0  means a vortex, so use value = 1
+            flow[i,j,k] = Q(jacobian_point(C,i,j,k))
                  
 stop = timeit.default_timer()
 print "ready"
@@ -59,3 +58,17 @@ C = 0
 vel_u = 0
 vel_v = 0
 vel_w = 0
+
+#to plot
+#src = mlab.pipeline.scalar_field(flow[::8][::1][::1])
+#mlab.pipeline.iso_surface(src, contours=100)
+#mlab.outline()
+#mlab.show()
+
+grid = tvtk.ImageData(spacing=(10, 5, -10), origin=(100, 350, 200), 
+                      dimensions=flow.shape)
+grid.point_data.scalars = np.ravel(flow,order = 'F')
+grid.point_data.scalars.name = 'Test Data'
+#write_data(grid, 'test.vtk')
+
+
