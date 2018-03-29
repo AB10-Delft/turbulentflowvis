@@ -7,7 +7,7 @@ def l2(jac):
     #S and Omega, the main parameters of the method
     S = (jac + jacT) / 2
     O = (jac - jacT) / 2
-    #Intermediate step, S^2 + O^2
+    #Intermediate step, S^2 + O^2: ELEMENT-WISE!
     L = np.multiply(S,S) + np.multiply(O,O)
     #print L
     eig, eigv = lg.eig(L)
