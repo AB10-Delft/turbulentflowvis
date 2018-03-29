@@ -8,7 +8,7 @@ def l2(jac):
     S = (jac + jacT) / 2
     O = (jac - jacT) / 2
     #Intermediate step, S^2 + O^2
-    L = S * S + O * O
+    L = np.multiply(S,S) + np.multiply(O,O)
     #print L
     eig, eigv = lg.eig(L)
     # sort like l1 > l2 > l3
