@@ -16,7 +16,6 @@ def l2(jac):
     eig = eig[::-1]
     #print eig
     # Is it a vortex?
-    i = 0
     # Not to begin with, check l2 (turning point)
     vortex = False
     if eig[1] < 0:
