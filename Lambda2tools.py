@@ -9,19 +9,19 @@ def l2(jac):
     O = (jac - jacT) / 2
     #Intermediate step, S^2 + O^2
     L = S * S + O * O
-    print L
+    #print L
     eig, eigv = lg.eig(L)
     # sort like l1 > l2 > l3
     eig = np.sort(eig)
     eig = eig[::-1]
-    print eig
+    #print eig
     # Is it a vortex?
     i = 0
     # Not to begin with, check l2 (turning point)
     vortex = False
     if eig[1] < 0:
         vortex = True
-    print vortex
+    #print vortex
 
     return vortex, eig[1]
 
