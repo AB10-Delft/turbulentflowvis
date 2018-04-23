@@ -1,4 +1,4 @@
-import numpy as np
+#import numpy as np
 import scipy.io as sc
 from jacobian_4 import jac4
 import timeit
@@ -29,9 +29,9 @@ def Q(mtx):
     return (mtx[0,0]*mtx[1,1]-mtx[0,1]*mtx[1,0])+(mtx[0,0]*mtx[2,2]-mtx[0,2]*mtx[2,0])+(mtx[1,1]*mtx[2,2]-mtx[1,2]*mtx[2,1])
 
 ## Define constants
-flow = np.zeros((188,188,188))
-r = range(2,189)
-h = 1.
+flow = np.zeros((188,188,188))   # size - 4
+r = range(2,189)   #upper bound = size-2
+h = 1
 
 ## start timer
 start = timeit.default_timer()
@@ -39,7 +39,7 @@ start = timeit.default_timer()
 for i in r:
     for j in r:
         for k in r:
-            flow[i,j,k] = Q(jac4(vel_u,vel_v,vel_w,i,j,k,h))
+            flow[i-2,j-2,k-2] = Q(jac4(vel_u,vel_v,vel_w,i,j,k,h))
                  
 stop = timeit.default_timer()
 print "ready"
@@ -53,8 +53,8 @@ vel_v = 0
 vel_w = 0
 
 
-grid = tvtk.ImageData(spacing=(10, 5, -10), origin=(100, 350, 200), 
-                      dimensions=flow.shape)
-grid.point_data.scalars = np.ravel(flow,order = 'F')
-grid.point_data.scalars.name = 'Test Data'
+#grid = tvtk.ImageData(spacing=(10, 5, -10), origin=(100, 350, 200), 
+#                      dimensions=flow.shape)
+#grid.point_data.scalars = np.ravel(flow,order = 'F')
+#grid.point_data.scalars.name = 'Test Data'
 #write_data(grid, 'test.vtk')
