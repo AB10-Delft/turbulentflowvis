@@ -1,4 +1,4 @@
-import numpy as np
+)import numpy as np
 
 def prim_x(mtx,x,j,k,h):
     prim = (-mtx[x+2*h,j,k]+8*mtx[x+h,j,k]-8*mtx[x-h,j,k]+mtx[x-2*h,j,k])/(12*h)
@@ -13,7 +13,7 @@ def prim_z(mtx,i,j,z,h):
     return prim
 
 def jac4(vel_u,vel_v,vel_w,i,j,k,h):
-    J = np.zeros((3,3)
+    J = np.zeros((3,3))
     J[0,0] = prim_x(vel_u,i,j,k,h)
     J[0,1] = prim_x(vel_v,i,j,k,h)
     J[0,2] = prim_x(vel_w,i,j,k,h)
