@@ -1,0 +1,20 @@
+from tvtk.api import tvtk, write_data
+import numpy as np
+
+
+
+def save(data1,data2,qq):
+    """ Q data, Lamda data, 'name of file'"""
+
+    #create the grid and create first data set
+    grid = tvtk.ImageData(spacing=data1.shape, origin=(0,0,0),dimensions=data1.shape)
+    grid.point_data.scalars = np.ravel(data1,order = 'F')
+    grid.point_data.scalars.name = 'Q method'
+
+    #add second data set
+    grid.point_data.add_array(np.ravel(data2,order = 'F'))
+    grid.point_data.get_array(1).name = 'Lamda method'
+    grid.point_data.update()
+
+    #write the data
+    write_data(grid, qq+ '.vtk')
