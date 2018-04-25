@@ -1,4 +1,4 @@
-)import numpy as np
+import numpy as np
 
 def prim_x(mtx,x,j,k,h):
     prim = (-mtx[x+2*h,j,k]+8*mtx[x+h,j,k]-8*mtx[x-h,j,k]+mtx[x-2*h,j,k])/(12*h)
