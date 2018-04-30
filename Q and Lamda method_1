@@ -1,13 +1,16 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 import numpy as np
 import scipy.io as sc
 from jacobian_4 import jac4
-import timeit
+import time
 from tvtk.api import tvtk, write_data
 from Lamda2tools import l2
 
+start = time.time()
 
 ####  read the matlabfile
-dt = sc.loadmat('raw_data_1.mat')
+dt = sc.loadmat('validation_Q_l2.mat')
 #raw_data_1.mat
 #validation_Q_l2.mat
 
@@ -23,7 +26,7 @@ vel_w = np.squeeze(np.asarray(vel_w))
 vel_v = np.squeeze(np.asarray(vel_v))
 
 
-n=192
+n=96
 
 ### Evaluate Jacobian at each point, and calculate Q
 
@@ -34,28 +37,56 @@ def Q(mtx):
 ## Define constants
 flow_lamda = np.zeros((n-4,n-4,n-4))
 flow_Q = np.zeros((n-4,n-4,n-4))
+ke = np.zeros((n-4,n-4,n-4))
 r = range(2,n-2)
 h = 1
 
+#t1 = time.time()
+#print t1 - start
 ## start timer
-start = timeit.default_timer()
+#start = timeit.default_timer()
 
 for i in r:
     for j in r:
         for k in r:
+            ke[i-2,j-2,k-2] = (vel_u[i-2,j-2,k-2]*vel_u[i-2,j-2,k-2] + vel_v[i-2,j-2,k-2]*vel_v[i-2,j-2,k-2] + vel_w[i-2,j-2,k-2]*vel_w[i-2,j-2,k-2])/2. 
             flow_Q[i-2,j-2,k-2] = Q(jac4(vel_u,vel_v,vel_w,i,j,k,h))
-            #flow_lamda[i-2,j-2,k-2] = l2(jac4(vel_u,vel_v,vel_w,i,j,k,h))
+            flow_lamda[i-2,j-2,k-2] = l2(jac4(vel_u,vel_v,vel_w,i,j,k,h))
                  
-stop = timeit.default_timer()
+stop = time.time()
 print "ready"
 print "time elapsed: ", stop - start, "s"
-print flow_lamda.shape
+print flow_Q.shape
 
 ### clean memory
 
 vel_u = 0
 vel_v = 0
 vel_w = 0
+
+def save(data1,data2,data3, qq):
+    """ Q data, Lamda data, 'name of file'"""
+
+    #create the grid and create first data set
+    grid = tvtk.ImageData(spacing=data1.shape, origin=(0,0,0),dimensions=data1.shape)
+    grid.point_data.scalars = np.ravel(data1,order = 'F')
+    grid.point_data.scalars.name = 'Q method'
+
+    #add second data set
+    grid.point_data.add_array(np.ravel(data2,order = 'F'))
+    grid.point_data.get_array(1).name = 'Lamda method'
+    grid.point_data.update()
+    
+    #add third data set
+    grid.point_data.add_array(np.ravel(data3,order = 'F'))
+    grid.point_data.get_array(2).name = 'Kinetic Energy'
+    grid.point_data.update()
+    
+
+    #write the data
+    write_data(grid, qq+ '.vtk')
+    
+save(flow_Q, flow_lamda, ke, 'Test_file')
 
 #grid = tvtk.ImageData(spacing=(92,92,92), origin=(0,0,0),dimensions=flow_Q.shape)
 #grid.point_data.scalars = np.ravel(flow_Q,order = 'F')
