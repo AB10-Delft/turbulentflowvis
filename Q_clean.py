@@ -24,7 +24,7 @@ def jac_vec(Uin):
     n = np.array(Uin.shape)[0]
     ushape = np.array(Uin.shape[:-1])
     DIM = np.array(Uin.shape)[-1:][0]
-    h = pi/(n-1)
+    h = 2*pi/(n-1)
     out = np.zeros(tuple(ushape-4) + (DIM,DIM))
     U = Uin[:,2:-2,2:-2,:]  # view array wihtout j,k halo
     out[...,0,:] = (-U[4:,:,:] + 8*U[3:-1,:,:] - 8*U[1:-3,:,:] + U[:-4,:,:])/(12.*h)
