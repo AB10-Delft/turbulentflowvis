@@ -1,0 +1,144 @@
+import numpy as np
+import scipy.io as sc
+import timeit
+from math import *
+from tvtk.api import tvtk, write_data
+
+# reading the file
+def read_data(r_name,DIM=3):
+    """ Reads .mat files into numpy arrays """
+    start = timeit.default_timer()
+    print "Reading...",
+    dt = sc.loadmat(r_name +'.mat')
+    vel_u =  dt['u']
+    vel_w =  dt['w']
+    vel_v = dt['v']
+    U = np.empty(vel_u.shape + (DIM,))
+    U[...,0] = vel_u
+    U[...,1] = vel_v
+    U[...,2] = vel_w
+    print timeit.default_timer() - start, 's'
+    
+
+    return vel_u,vel_v,vel_w,U
+
+#Makning the jacobian
+def jac_vec(Uin):
+    """ Returns jacobian vector for the entire matrix """
+    
+    n = np.array(Uin.shape)[0]
+    ushape = np.array(Uin.shape[:-1])
+    DIM = np.array(Uin.shape)[-1:][0]
+    h =2*pi/(n-1)
+    out = np.zeros(tuple(ushape-4) + (DIM,DIM))
+    U = Uin[:,2:-2,2:-2,:]  # view array wihtout j,k halo
+    out[...,0,:] = (-U[4:,:,:] + 8*U[3:-1,:,:] - 8*U[1:-3,:,:] + U[:-4,:,:])/(12.*h)
+    U = Uin[2:-2,:,2:-2,:]  # view array wihtout i,k halo
+    out[...,1,:] = (-U[:,4:,:] + 8*U[:,3:-1,:] - 8*U[:,1:-3,:] + U[:,:-4,:])/(12.*h)
+    U = Uin[2:-2,2:-2,:,:]  # view array wihtout i,j halo
+    out[...,2,:] = (-U[:,:,4:] + 8*U[:,:,3:-1] - 8*U[:,:,1:-3] + U[:,:,:-4])/(12.*h)
+    return out
+
+# calculation of the Q method
+def q_vec(J):
+    return J[...,0,0]*J[...,1,1]-J[...,0,1]*J[...,1,0]+J[...,0,0]*J[...,2,2]-J[...,0,2]*J[...,2,0]+J[...,1,1]*J[...,2,2]-J[...,1,2]*J[...,2,1]
+
+#Calculation of the vorticity
+def vorticity(J):
+    return np.power(np.power((J[...,2,1]-J[...,1,2]),2)+np.power((J[...,0,2]-J[...,2,0]),2)+np.power((J[...,1,0]-J[...,0,1]),2),1/2.)
+
+#Calculation of lambda 2
+def lambda_vec(J):
+    #start = timeit.default_timer()
+    #print "Calculating Lambda2...",
+    J_t = np.transpose(J,(0,1,2,4,3))
+    S = (J_t + J)/2.
+    O = (J_t - J)/2.
+    L = np.matmul(S,S) + np.matmul(O,O)
+    DIM = np.array(J.shape)[-1]
+    eigen = np.empty(tuple(np.array(J.shape)[:-2]-4)+(DIM,))#minus 4
+    eigen = np.linalg.eigvals(L)
+    eigen.sort()   #it seems that sorting is element wise 
+    #print timeit.default_timer() - start, 's'
+    return eigen[...,1]
+
+#Save the file
+def save_single(data1,title, name):
+    """data ,'title', 'name of file'"""
+
+    #create the grid and create first data set
+    grid = tvtk.ImageData(spacing=data1.shape, origin=(0,0,0),dimensions=data1.shape)
+    grid.point_data.scalars = np.ravel(data1,order = 'F')
+    grid.point_data.scalars.name = title
+    
+    #write the data
+    write_data(grid, name+ '.vtk')
+
+
+def save_double(data1,data2, title_1, title_2, name):
+    """data_1, data_2, 'title_1', 'title_2', 'name of file'"""
+
+    #create the grid and create first data set
+    grid = tvtk.ImageData(spacing=data1.shape, origin=(0,0,0),dimensions=data1.shape)
+    grid.point_data.scalars = np.ravel(data1,order = 'F')
+    grid.point_data.scalars.name = title_1
+    
+    grid.point_data.add_array(np.ravel(data2,order = 'F'))
+    grid.point_data.get_array(1).name = title_2
+    grid.point_data.update()
+
+    #write the data
+    write_data(grid, name+ '.vtk')
+    
+def save_triple(data1,data2,data_3, title_1, title_2, title_3, name):
+    """data_1, data_2, data_3, 'title_1', 'title_2', 'title_3', 'name of file'"""
+
+    #create the grid and create first data set
+    grid = tvtk.ImageData(spacing=data1.shape, origin=(0,0,0),dimensions=data1.shape)
+    grid.point_data.scalars = np.ravel(data1,order = 'F')
+    grid.point_data.scalars.name = title_1
+    
+    grid.point_data.add_array(np.ravel(data2,order = 'F'))
+    grid.point_data.get_array(1).name = title_2
+    grid.point_data.update()
+    
+    grid.point_data.add_array(np.ravel(data2,order = 'F'))
+    grid.point_data.get_array(2).name = title_3
+    grid.point_data.update()
+
+    #write the data
+    write_data(grid, name+ '.vtk')
+
+#Main function
+
+def flow(r_name,name,*args):
+    """ read,write,['q','l','q+','l+','ql','ql+'] """
+    u,v,w,Uin = read_data(r_name)
+    start = timeit.default_timer()
+    J = jac_vec(Uin)
+    
+    if args[0] == 'q':
+        print "Calculating Q...",
+        save_single(q_vec(J),'Q method',name)
+        
+    elif args[0] == 'l':
+        print "Calculating l2...",
+        save_single(lambda_vec(J),'l2 method',name)
+        
+    elif args[0] == 'q+':
+        print "Calculating Q & vorticity...",
+        save_double(q_vec(J),vorticity(J),'Q method','Vorticity',name)
+        
+    elif args[0] == 'l+':
+        print "Calculating l2 & vorticity...",
+        save_double(lambda_vec(J),vorticity(J),'l2 method','Vorticity',name)
+        
+    elif args[0] == 'ql':
+        print "Calculating Q & l2...",
+        save_double(q_vec(J),lambda_vec(J),'Q method','l2 method',name)
+        
+    elif args[0] == 'ql+':
+        print "Calculating Q & l2 & vorticity...",
+        save_triple(q_vec(J),lambda_vec(J),vorticity(J),'Q method','l2 method','Vorticity',name)
+        
+    print timeit.default_timer() - start, 's'
