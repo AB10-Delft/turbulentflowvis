@@ -22,7 +22,7 @@ def read_data(r_name,DIM=3):
 
     return vel_u,vel_v,vel_w,U
 
-#Makning the jacobian
+# Calculating the Jacobian
 def jac_vec(Uin):
     """ Returns jacobian vector for the entire matrix """
     
