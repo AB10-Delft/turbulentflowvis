@@ -1,18 +1,23 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 import numpy as np
 import scipy.io as sc
 import timeit
 from math import *
 from tvtk.api import tvtk, write_data
+import h5py
 
 # reading the file
 def read_data(r_name,DIM=3):
     """ Reads .mat files into numpy arrays """
     start = timeit.default_timer()
     print "Reading...",
-    dt = sc.loadmat(r_name +'.mat')
-    vel_u =  dt['u']
-    vel_w =  dt['w']
-    vel_v = dt['v']
+    #dt = sc.loadmat(r_name +'.mat')
+    dt= h5py.File(r_name +'.h5','r')
+    
+    vel_u =  np.array(dt['u'])
+    vel_w =  np.array(dt['w'])
+    vel_v = np.array(dt['v'])
     U = np.empty(vel_u.shape + (DIM,))
     U[...,0] = vel_u
     U[...,1] = vel_v
@@ -22,7 +27,7 @@ def read_data(r_name,DIM=3):
 
     return vel_u,vel_v,vel_w,U
 
-# Calculating the Jacobian
+#Makning the jacobian
 def jac_vec(Uin):
     """ Returns jacobian vector for the entire matrix """
     
@@ -45,7 +50,7 @@ def q_vec(J):
 
 #Calculation of the vorticity
 def vorticity(J):
-    return np.power(np.power((J[...,2,1]-J[...,1,2]),2)+np.power((J[...,0,2]-J[...,2,0]),2)+np.power((J[...,1,0]-J[...,0,1]),2),1/2.)
+    return (J[...,1,0]-J[...,0,1]) / np.power(np.power((J[...,2,1]-J[...,1,2]),2)+np.power((J[...,0,2]-J[...,2,0]),2)+np.power((J[...,1,0]-J[...,0,1]),2),0.5)
 
 #Calculation of lambda 2
 def lambda_vec(J):
@@ -90,8 +95,8 @@ def save_double(data1,data2, title_1, title_2, name):
     #write the data
     write_data(grid, name+ '.vtk')
     
-def save_triple(data1,data2,data_3, title_1, title_2, title_3, name):
-    """data_1, data_2, data_3, 'title_1', 'title_2', 'title_3', 'name of file'"""
+def save_triple(data1,data2,data3, title_1, title_2, title_3, name):
+    """data1, data2, data3, 'title_1', 'title_2', 'title_3', 'name of file'"""
 
     #create the grid and create first data set
     grid = tvtk.ImageData(spacing=data1.shape, origin=(0,0,0),dimensions=data1.shape)
@@ -102,7 +107,7 @@ def save_triple(data1,data2,data_3, title_1, title_2, title_3, name):
     grid.point_data.get_array(1).name = title_2
     grid.point_data.update()
     
-    grid.point_data.add_array(np.ravel(data2,order = 'F'))
+    grid.point_data.add_array(np.ravel(data3,order = 'F'))
     grid.point_data.get_array(2).name = title_3
     grid.point_data.update()
 
@@ -142,3 +147,18 @@ def flow(r_name,name,*args):
         save_triple(q_vec(J),lambda_vec(J),vorticity(J),'Q method','l2 method','Vorticity',name)
         
     print timeit.default_timer() - start, 's'
+    
+#for i in range(1,10):
+#  flow('./movie/uvwp_0000'+str(i), 'movie_'+ str(i) ,'q+')
+#  print i
+#time_lst =[]    
+#for i in range(10,800,25):
+#    start = timeit.default_timer()
+#    U = np.array(np.random.rand(i,i,i,3))
+#    jac = jac_vec(U)
+#    Q = q_vec(jac)
+#    print timeit.default_timer() - start
+#    time_lst.append(timeit.default_timer() - start)
+                              
+                              
+    
